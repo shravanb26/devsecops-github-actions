@@ -1,0 +1,66 @@
+name: DevSecOps CI Pipeline
+
+# Triggers on pushes/PRs to main, skipping paths that would cause infinite loops
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'kubernetes/**'  # Prevent infinite loops
+      - 'README.md'
+      - 'assets/**'
+      - '.github/workflows/README.md'
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  # Gate job: scans for leaked secrets and vulnerable dependencies before any build work
+  security-prechecks:
+    name: Security Prechecks
+    runs-on: ubuntu-latest
+    steps:
+      # Git Checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch all history for all branches and tags
+
+      # Scans full git history for accidentally committed secrets (tokens, passwords, keys)
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # Scans source and dependencies for CRITICAL/HIGH CVEs; fails pipeline if any found
+      - name: Trivy FS Scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+
+  # Runs unit tests only after security gates pass, ensuring unsafe code never reaches test stage
+  unit-test:
+    name: Unit Testing
+    needs: security-prechecks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # SetUp NodeJs Env
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      # Uses npm ci instead of npm install for a clean, reproducible dependency install
+      - name: Install Dependencies
+        run: npm ci
+
+      # Run Unit Tests
+      - name: Run Unit Tests
+        run: npm test
