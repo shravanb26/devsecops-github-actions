@@ -33,7 +33,7 @@ jobs:
 
       # Scans source and dependencies for CRITICAL/HIGH CVEs; fails pipeline if any found
       - name: Trivy FS Scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: 'fs'
           scan-ref: '.'
