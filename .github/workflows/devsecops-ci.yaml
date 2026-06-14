@@ -3,6 +3,10 @@ name: DevSecOps CI Pipeline
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  contents: read
+  packages: write
+
 # Triggers on pushes/PRs to main, skipping paths that would cause infinite loops
 on:
   push:
