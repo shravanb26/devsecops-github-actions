@@ -114,3 +114,33 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build-artifacts:
+    name: Build and Store Artifacts
+    runs-on: ubuntu-latest
+    needs: static-testing
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # SetUp NodeJs Env
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with: 
+          node-version: 20
+          cache: npm
+          
+      # Install Dependencies
+      - name: Install Dependencies
+        run: npm ci
+
+      # Build Project
+      - name: Build Project
+        run: npm run build
+
+      # Upload Artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
