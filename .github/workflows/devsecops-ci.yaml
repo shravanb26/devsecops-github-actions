@@ -1,5 +1,8 @@
 name: DevSecOps CI Pipeline
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # Triggers on pushes/PRs to main, skipping paths that would cause infinite loops
 on:
   push:
@@ -62,7 +65,7 @@ jobs:
           path: trivy-results.json
       #upload SARRIF artifact for further processing (e.g., in a dashboard or reporting tool)
       - name: Upload SARIF Results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
 
@@ -183,10 +186,34 @@ jobs:
   
       # Build Docker Image
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.ci
           load: true  # load image into the local Docker daemon of this GitHub runner
           push: false
           tags: ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # Trivy Image Scan
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+
+      # Push Image
+      - name: Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # Export image tag as job output
+      - name: Export image tag
+        id: export-image-tag
+        run: |
+          echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
