@@ -54,6 +54,18 @@ jobs:
           output: trivy-results.sarif
           exit-code: 0
 
+      #upload JSON artifact for further processing (e.g., in a dashboard or reporting tool)
+      - name: Upload Trivy JSON Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-json-report
+          path: trivy-results.json
+      #upload SARRIF artifact for further processing (e.g., in a dashboard or reporting tool)
+      - name: Upload SARIF Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
 
   # Runs unit tests only after security gates pass, ensuring unsafe code never reaches test stage
   unit-test:
