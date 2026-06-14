@@ -196,7 +196,7 @@ jobs:
 
       # Trivy Image Scan
       - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           severity: CRITICAL,HIGH
@@ -206,7 +206,7 @@ jobs:
 
       # Push Image
       - name: Push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
