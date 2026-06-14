@@ -6,6 +6,7 @@ env:
 permissions:
   contents: read
   packages: write
+  security-events: write
 
 # Triggers on pushes/PRs to main, skipping paths that would cause infinite loops
 on:
